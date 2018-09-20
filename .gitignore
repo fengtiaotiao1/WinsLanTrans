@@ -1,0 +1,11 @@
+/.DS_Store
+**/.DS_Store
+WinsCore/.vs
+WinsCore/WinsCore/x64/Debug/
+WinsCore/WPFCallDll/bin/Debug/
+WinsCore/CallDll/Debug/
+WinsCore/x64/Debug/
+WinsCore/WinsCore/Debug/
+WinsCore/CallDll/x64/Debug/
+WinsCore/WPFCallDll/obj/Debug/
+WinsCore/Debug/
