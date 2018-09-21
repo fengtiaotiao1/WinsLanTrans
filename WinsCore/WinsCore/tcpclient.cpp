@@ -90,9 +90,12 @@ DWORD __stdcall TcpClient::recvData(LPVOID socket)
 	//向服务端发送文件名和文件大小
 	char buffer[1024];
 	memset(&buffer, 0, sizeof(buffer));
+	unsigned long fileOffset = 0;
 	while (recv(clientSocket, buffer, sizeof(buffer), 0) > 0) {
 		printf("from server msg: %s\n", buffer);
-		if (!strcmp(buffer, READY_TO_RECEIVE)) {
+		vector<string> array = Utils::split(buffer, ":");
+		if (!strcmp(array[0].c_str(), READY_TO_RECEIVE)) {
+			fileOffset = atoi(array[1].c_str());
 			break;
 		}
 	}
@@ -103,6 +106,7 @@ DWORD __stdcall TcpClient::recvData(LPVOID socket)
 		closesocket(clientSocket);
 		return 0;
 	}
+	fseek(fp, fileOffset, SEEK_SET);
 	memset(&buffer, 0, sizeof(buffer));
 	sendFileProcess(TRANS_START, 0, fileName.c_str());
 	unsigned long sendSize = 0;

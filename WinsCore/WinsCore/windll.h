@@ -4,8 +4,8 @@
 #define DLLEXPORT __declspec(dllexport)
 #endif 
 
-typedef void( *UdpCallback)(int cmd, const char* srcAddr, const char* msg);
-typedef void( *FileCallback)(int state, int type, int process, const char* filename);
+typedef void(*UdpCallback)(int cmd, const char* srcAddr, const char* msg);
+typedef void(*FileCallback)(int state, int type, int process, const char* filename);
 
 extern "C" DLLEXPORT void initSocket();
 extern "C" DLLEXPORT void sendUdpData(int cmd, const char* destAddr, const char* msg);

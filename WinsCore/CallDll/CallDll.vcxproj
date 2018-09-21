@@ -151,6 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="const.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="windll.h" />
   </ItemGroup>

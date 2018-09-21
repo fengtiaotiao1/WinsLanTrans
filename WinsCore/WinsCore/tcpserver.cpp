@@ -6,6 +6,7 @@
 #include "io.h"
 #include "direct.h"
 #include "windll.h"
+#include <sstream>
 #pragma comment(lib, "ws2_32.lib")
 
 static SOCKET serverSocket;
@@ -83,8 +84,8 @@ DWORD __stdcall TcpServer::recvData(LPVOID socket)
 		if (array.size() > 0 && !strcmp(array[0].c_str(), SEND_FILEINFO)) {
 			printf("from client msg: %s\n", buffer);
 			//向客户端发送准备好接收的消息
-			string msg = READY_TO_RECEIVE;
-			send(clientSocket, msg.c_str(), static_cast<int>(msg.size()), 0); 
+			//string msg = READY_TO_RECEIVE;
+			//send(clientSocket, msg.c_str(), static_cast<int>(msg.size()), 0); 
 			break;
 		}
 	}
@@ -103,12 +104,31 @@ DWORD __stdcall TcpServer::recvData(LPVOID socket)
 	//释放不用的path
 	free(socketInfo->path);
 
-	FILE *fp = fopen(savePath, "wb");
+	FILE *fp = fopen(savePath, "ab");
 	if (fp == NULL) {
 		printf("open file failed\n");
 		//        close(serverSocket);
 		return 0;
 	}
+	//判断当前文件的大小
+	unsigned long fileOffsetSize;
+	struct _stati64 st;
+	if (_stati64(savePath, &st) < 0) {
+		fileOffsetSize = 0;
+	}
+	else {
+		fileOffsetSize = st.st_size;
+	}
+	printf("current file offset is :%ld\n", fileOffsetSize);
+	//当前文件移动到指定位置
+	fseek(fp, fileOffsetSize, SEEK_SET);
+
+	//向客户端发送准备好接收的消息（包含已接收的偏移量）
+	stringstream readyRecvInfo;
+	readyRecvInfo << READY_TO_RECEIVE
+		<< ":"
+		<< fileOffsetSize;
+	send(clientSocket, readyRecvInfo.str().c_str(), static_cast<int>(readyRecvInfo.str().size()), 0);
 
 	//接收到的消息存入文件
 	sendFileProcess(TRANS_START, 0, fileName.c_str());
@@ -122,7 +142,7 @@ DWORD __stdcall TcpServer::recvData(LPVOID socket)
 		recvSize += ret;
 		sendFileProcess(TRANS_UPLOAD, Utils::calculateProcess(recvSize, fileSize), fileName.c_str());
 	}
-	fclose(fp);
+	fclose(fp); 
 	closesocket(clientSocket);
 	free(savePath);
 	free(socketInfo);
