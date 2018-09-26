@@ -8,9 +8,14 @@ typedef void(*UdpCallback)(int cmd, const char* srcAddr, const char* msg);
 typedef void(*FileCallback)(int state, int type, int process, const char* filename);
 
 extern "C" DLLEXPORT void initSocket();
-extern "C" DLLEXPORT void sendUdpData(int cmd, const char* destAddr, const char* msg);
-extern "C" DLLEXPORT void sendFile(const char* address, const char* path);
-extern "C" DLLEXPORT void startReceive(const char* path);
+extern "C" DLLEXPORT void sendUdpData(int cmd, const char *destAddr, const char *msg);
+extern "C" DLLEXPORT void onlineNotify();
+extern "C" DLLEXPORT void offlineNotify();
+extern "C" DLLEXPORT void sendFileReq(const char *address, const char *msg);
+extern "C" DLLEXPORT void sendFileRecvResp(const char *address, const char *msg);
+extern "C" DLLEXPORT void sendFileRejectResp(const char *address, const char *msg);
+extern "C" DLLEXPORT void sendFile(const char *address, const char *path);
+extern "C" DLLEXPORT void startReceive(const char *path);
 extern "C" DLLEXPORT void release();
 extern "C" DLLEXPORT void setUdpNotify(void *callback);
 extern "C" DLLEXPORT void setFileNotify(void *callback);

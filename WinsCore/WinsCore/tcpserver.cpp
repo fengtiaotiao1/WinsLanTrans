@@ -92,19 +92,21 @@ DWORD __stdcall TcpServer::recvData(LPVOID socket)
 	vector<string> array = Utils::split(buffer, ":");
 	string fileName = array[1];
 	unsigned long fileSize = atoi(array[2].c_str());
+	string fileMd5 = array[3];
 	memset(&buffer, 0, sizeof(buffer));
 
 	if (_access(path.c_str(), 6) < 0) {
 		_mkdir(path.c_str());
 	}
-	char *savePath = (char *)malloc(path.size() + fileName.size() + 2);
-	strcpy(savePath, path.c_str());
-	strcat(savePath, "/");
-	strcat(savePath, fileName.c_str());
-	//释放不用的path
-	free(socketInfo->path);
+	char *tempPath = (char *)malloc(path.size() + fileName.size() + fileMd5.size() + 7);
+	strcpy(tempPath, path.c_str());
+	strcat(tempPath, "/");
+	strcat(tempPath, fileName.c_str());
+	strcat(tempPath, "-");
+	strcat(tempPath, fileMd5.c_str());
+	strcat(tempPath, ".tmp");
 
-	FILE *fp = fopen(savePath, "ab");
+	FILE *fp = fopen(tempPath, "ab+");
 	if (fp == NULL) {
 		printf("open file failed\n");
 		//        close(serverSocket);
@@ -113,7 +115,7 @@ DWORD __stdcall TcpServer::recvData(LPVOID socket)
 	//判断当前文件的大小
 	unsigned long fileOffsetSize;
 	struct _stati64 st;
-	if (_stati64(savePath, &st) < 0) {
+	if (_stati64(tempPath, &st) < 0) {
 		fileOffsetSize = 0;
 	}
 	else {
@@ -133,7 +135,7 @@ DWORD __stdcall TcpServer::recvData(LPVOID socket)
 	//接收到的消息存入文件
 	sendFileProcess(TRANS_START, 0, fileName.c_str());
 	int ret;
-	unsigned long recvSize = 0;
+	unsigned long recvSize = fileOffsetSize;
 	while ((ret = (int)recv(clientSocket, buffer, sizeof(buffer), 0)) > 0) {
 		if (fwrite(buffer, sizeof(char), ret, fp) <= 0) {
 			break;
@@ -142,13 +144,55 @@ DWORD __stdcall TcpServer::recvData(LPVOID socket)
 		recvSize += ret;
 		sendFileProcess(TRANS_UPLOAD, Utils::calculateProcess(recvSize, fileSize), fileName.c_str());
 	}
-	fclose(fp); 
+	fclose(fp);
 	closesocket(clientSocket);
-	free(savePath);
+	//判断文件是否完整接收，若接收完整则重命名
+	if (recvSize == fileSize) {
+		printf("file received complete!\n");
+		if (checkFile(tempPath, fileName, fileMd5))
+		{
+			sendFileProcess(TRANS_SUCCESS, 101, fileName.c_str());
+		}
+		else {
+			sendFileProcess(TRANS_FAILED, -1, fileName.c_str());
+		}
+	}
+	free(tempPath);
+	free(socketInfo->path);
 	free(socketInfo);
-	sendFileProcess(TRANS_SUCCESS, -1, fileName.c_str());
 	printf("server receive success\n");
 	return 0;
+}
+
+bool TcpServer::checkFile(string tempPath, string fileName, string fileMd5)
+{
+	//判断接收的文件是否正确
+	string recvMd5 = Utils::getFileMd5(tempPath.c_str());
+	if (strcmp(recvMd5.c_str(), fileMd5.c_str()) != 0)
+	{
+		printf("received file failed!\n");
+		remove(tempPath.c_str());
+		return false;
+	}
+	string suffixStr = fileName.substr(fileName.find_last_of('.'));
+	string renamePath = tempPath.substr(0, tempPath.find_last_of("-"));
+	int i = 1;
+	while (_access(renamePath.c_str(), 0) != -1) {
+		//文件已存在
+		renamePath = tempPath.substr(0, tempPath.find_last_of("-") - suffixStr.size());
+		char index[5];
+		renamePath.append("(")
+			.append(_itoa(i, index, 10))
+			.append(")")
+			.append(suffixStr);
+		i++;
+	}
+	if (rename(tempPath.c_str(), renamePath.c_str()) < 0) {
+		printf("file rename failed!\n");
+		perror("rename");
+		return false;
+	}
+	return true;
 }
 
 void TcpServer::sendFileProcess(int state, int process, const char* filename)

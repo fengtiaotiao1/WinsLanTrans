@@ -83,7 +83,9 @@ DWORD __stdcall TcpClient::recvData(LPVOID socket)
 		<< ":"
 		<< fileName
 		<< ":"
-		<< fileSize;
+		<< fileSize
+		<< ":"
+		<< Utils::getFileMd5(path.c_str());
 
 	printf("send fileInfo: %s\n", fileInfo.str().c_str());
 	send(clientSocket, fileInfo.str().c_str(), static_cast<int>(fileInfo.str().size()), 0);
@@ -109,7 +111,7 @@ DWORD __stdcall TcpClient::recvData(LPVOID socket)
 	fseek(fp, fileOffset, SEEK_SET);
 	memset(&buffer, 0, sizeof(buffer));
 	sendFileProcess(TRANS_START, 0, fileName.c_str());
-	unsigned long sendSize = 0;
+	unsigned long sendSize = fileOffset;
 	while ((ret = (int)fread(buffer, sizeof(char), sizeof(buffer), fp)) > 0) {
 		if ((send(clientSocket, buffer, ret, 0)) < 0) {
 			break;
@@ -123,7 +125,7 @@ DWORD __stdcall TcpClient::recvData(LPVOID socket)
 	free(socketInfo->ip);
 	free(socketInfo);
 	closesocket(clientSocket);
-	sendFileProcess(TRANS_SUCCESS, -1, fileName.c_str());
+	sendFileProcess(TRANS_SUCCESS, 101, fileName.c_str());
 	printf("client send success\n");
 
 	return 0;

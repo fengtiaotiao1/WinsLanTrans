@@ -149,6 +149,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="const.h" />
+    <ClInclude Include="md5.h" />
+    <ClInclude Include="md5global.h" />
     <ClInclude Include="sqlite3.h" />
     <ClInclude Include="sqlitehelp.h" />
     <ClInclude Include="stdafx.h" />
@@ -164,6 +166,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="md5.cpp" />
     <ClCompile Include="sqlite3.c" />
     <ClCompile Include="sqlitehelp.c" />
     <ClCompile Include="stdafx.cpp">

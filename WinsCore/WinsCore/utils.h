@@ -17,6 +17,6 @@ public:
 	static string getLocalIp(SOCKET sockfd);
 	static int calculateProcess(unsigned long processSize, unsigned long fileSize);
 	static void reverseByte(string s, int n);
-	
+	static string getFileMd5(const char *filePath);
 
 };
