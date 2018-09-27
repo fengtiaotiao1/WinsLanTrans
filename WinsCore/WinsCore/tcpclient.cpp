@@ -6,6 +6,8 @@
 #include "windll.h"
 #pragma comment(lib, "ws2_32.lib")
 
+#define MAXBUFFER 4096
+
 static int sendProcess = -1;
 
 void TcpClient::initClientSocket(const char* address, const char* path)
@@ -34,6 +36,9 @@ void TcpClient::initClientSocket(const char* address, const char* path)
 	socketInfo->ip = (char *)malloc(strlen(address) + 1);
 	strcpy(socketInfo->ip, address);
 	socketInfo->socket = clientSocket;
+	string md5 = Utils::getFileMd5(path);
+	socketInfo->fileMd5 = (char *)malloc(md5.size() + 1);
+	strcpy(socketInfo->fileMd5, md5.c_str());
 	//启动线程
 	HANDLE tcpThread = CreateThread(NULL, 0, recvData, (LPVOID)socketInfo, 0, 0);
 	if (tcpThread != NULL) {
@@ -47,6 +52,7 @@ DWORD __stdcall TcpClient::recvData(LPVOID socket)
 	SOCKET clientSocket = socketInfo->socket;
 	string path = socketInfo->path;
 	string address = socketInfo->ip;
+	string fileMd5 = socketInfo->fileMd5;
 
 	struct sockaddr_in serverAddr;
 	memset(&serverAddr, 0, sizeof(serverAddr));
@@ -65,7 +71,6 @@ DWORD __stdcall TcpClient::recvData(LPVOID socket)
 
 	//获取文件名
 	vector<string> array = Utils::split(path, "/\\");
-	printf("yuanjf== array: %d\n", array.size());
 	if (array.size() == 0) {
 		closesocket(clientSocket);
 		return 0;
@@ -85,12 +90,12 @@ DWORD __stdcall TcpClient::recvData(LPVOID socket)
 		<< ":"
 		<< fileSize
 		<< ":"
-		<< Utils::getFileMd5(path.c_str());
+		<< fileMd5;
 
 	printf("send fileInfo: %s\n", fileInfo.str().c_str());
 	send(clientSocket, fileInfo.str().c_str(), static_cast<int>(fileInfo.str().size()), 0);
 	//向服务端发送文件名和文件大小
-	char buffer[1024];
+	char buffer[MAXBUFFER];
 	memset(&buffer, 0, sizeof(buffer));
 	unsigned long fileOffset = 0;
 	while (recv(clientSocket, buffer, sizeof(buffer), 0) > 0) {
@@ -120,14 +125,19 @@ DWORD __stdcall TcpClient::recvData(LPVOID socket)
 		sendFileProcess(TRANS_UPLOAD, Utils::calculateProcess(sendSize, fileSize), fileName.c_str());
 		memset(&buffer, 0, sizeof(buffer));
 	}
+	if (sendSize == fileSize) {
+		sendFileProcess(TRANS_SUCCESS, 101, fileName.c_str());
+	}
+	else {
+		sendFileProcess(TRANS_FAILED, -1, fileName.c_str());
+	}
 	fclose(fp);
 	free(socketInfo->path);
 	free(socketInfo->ip);
+	free(socketInfo->fileMd5);
 	free(socketInfo);
 	closesocket(clientSocket);
-	sendFileProcess(TRANS_SUCCESS, 101, fileName.c_str());
-	printf("client send success\n");
-
+	printf("Send thread end!\n");
 	return 0;
 }
 

@@ -30,5 +30,5 @@ extern "C" DLLEXPORT int updateMemberIpByName(const char *memberName, const char
 extern "C" DLLEXPORT int queryAllGroup();
 extern "C" DLLEXPORT int queryGroupMemberById(int groupId);
 
-void notify(int cmd, const char* srcAddr, const char* msg);
-void fileTransCallback(int state, int type, int process, const char* filename);
+void notify(int cmd, const char *srcAddr, const char *msg);
+void fileTransCallback(int state, int type, int process, const char *filename);

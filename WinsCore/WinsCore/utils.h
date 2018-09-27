@@ -8,6 +8,7 @@ using namespace std;
 
 typedef struct stSocketInfo {
 	char *path;
+	char *fileMd5;
 	char *ip;
 	SOCKET socket;
 }SocketInfo, *PSocketInfo;

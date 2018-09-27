@@ -9,6 +9,8 @@
 #include <sstream>
 #pragma comment(lib, "ws2_32.lib")
 
+#define MAXBUFFER 4096
+
 static SOCKET serverSocket;
 static int recvProcess = -1;
 
@@ -77,7 +79,7 @@ DWORD __stdcall TcpServer::recvData(LPVOID socket)
 	}
 	printf("client connect success\n");
 
-	char buffer[1024];
+	char buffer[MAXBUFFER];
 	memset(&buffer, 0, sizeof(buffer));
 	while (recv(clientSocket, buffer, sizeof(buffer), 0) > 0) {
 		vector<string> array = Utils::split(buffer, ":");
@@ -109,7 +111,6 @@ DWORD __stdcall TcpServer::recvData(LPVOID socket)
 	FILE *fp = fopen(tempPath, "ab+");
 	if (fp == NULL) {
 		printf("open file failed\n");
-		//        close(serverSocket);
 		return 0;
 	}
 	//判断当前文件的大小
@@ -149,8 +150,7 @@ DWORD __stdcall TcpServer::recvData(LPVOID socket)
 	//判断文件是否完整接收，若接收完整则重命名
 	if (recvSize == fileSize) {
 		printf("file received complete!\n");
-		if (checkFile(tempPath, fileName, fileMd5))
-		{
+		if (checkFile(tempPath, fileName, fileMd5)){
 			sendFileProcess(TRANS_SUCCESS, 101, fileName.c_str());
 		}
 		else {
@@ -160,7 +160,7 @@ DWORD __stdcall TcpServer::recvData(LPVOID socket)
 	free(tempPath);
 	free(socketInfo->path);
 	free(socketInfo);
-	printf("server receive success\n");
+	printf("Receive thread end!\n");
 	return 0;
 }
 
